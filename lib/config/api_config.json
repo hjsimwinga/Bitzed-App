@@ -1,4 +1,4 @@
 {
-  "apiUrl": "http://10.0.2.2:30001/api",
-  "environment": "android_emulator"
+  "apiUrl": "https://bitzed.xyz/api",
+  "environment": "production"
 }
