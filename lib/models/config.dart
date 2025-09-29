@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 class AppConfig {
   final String apiBaseUrl;
   final double maxBuyAmount;
@@ -15,12 +18,30 @@ class AppConfig {
 
   factory AppConfig.fromJson(Map<String, dynamic> json) {
     return AppConfig(
-      apiBaseUrl: json['apiBaseUrl'] ?? 'http://localhost:3000/api',
+      apiBaseUrl: json['apiUrl'] ?? 'https://bitzed.xyz/api',
       maxBuyAmount: (json['maxBuyAmount'] ?? 120).toDouble(),
       maxSpendAmount: (json['maxSpendAmount'] ?? 80).toDouble(),
       spendEnabled: json['spendEnabled'] ?? true,
       supportedNetworks: List<String>.from(json['supportedNetworks'] ?? ['airtel', 'mtn', 'zamtel']),
     );
+  }
+
+  static Future<AppConfig> load() async {
+    try {
+      final file = File('lib/config/api_config.json');
+      final contents = await file.readAsString();
+      final json = jsonDecode(contents);
+      return AppConfig.fromJson(json);
+    } catch (e) {
+      // Return default config if file can't be read
+      return AppConfig(
+        apiBaseUrl: 'https://bitzed.xyz/api',
+        maxBuyAmount: 120.0,
+        maxSpendAmount: 80.0,
+        spendEnabled: true,
+        supportedNetworks: ['airtel', 'mtn', 'zamtel'],
+      );
+    }
   }
 
   Map<String, dynamic> toJson() {

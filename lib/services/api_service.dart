@@ -11,8 +11,8 @@ class ApiService {
   // Initialize the base URL from config
   static Future<void> initialize() async {
     try {
-      final config = await Config.load();
-      _baseUrl = config.apiUrl;
+      final config = await AppConfig.load();
+      _baseUrl = config.apiBaseUrl;
     } catch (e) {
       // Fallback to hardcoded URL if config fails
       _baseUrl = 'https://bitzed.xyz/api';
