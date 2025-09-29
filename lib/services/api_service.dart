@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/transaction.dart';
@@ -6,16 +6,21 @@ import '../models/rate.dart';
 import '../models/config.dart';
 
 class ApiService {
-  // Try multiple URLs for different environments
-  static const List<String> _baseUrls = [
-    'http://10.0.2.2:30001/api', // Android emulator host IP
-    'http://127.0.0.1:30001/api', // Localhost for other platforms
-    'http://localhost:30001/api', // Fallback localhost
-  ];
-  
-  static String get _baseUrl => 'http://10.0.2.2:30001/api'; // Android emulator host IP
-  
+  static String _baseUrl = '';
+
+  // Initialize the base URL from config
+  static Future<void> initialize() async {
+    try {
+      final config = await Config.load();
+      _baseUrl = config.apiUrl;
+    } catch (e) {
+      // Fallback to hardcoded URL if config fails
+      _baseUrl = 'https://bitzed.xyz/api';
+    }
+  }
+
   static Future<ExchangeRate> getExchangeRate() async {
+    await initialize();
     try {
       final response = await http.get(
         Uri.parse('$_baseUrl/rate'),
@@ -26,7 +31,7 @@ class ApiService {
         final data = json.decode(response.body);
         return ExchangeRate.fromJson(data);
       } else {
-        throw Exception('Failed to fetch exchange rate: ${response.statusCode}');
+        throw Exception('Failed to fetch exchange rate: $response.statusCode');
       }
     } catch (e) {
       throw Exception('Error fetching exchange rate: $e');
@@ -34,6 +39,7 @@ class ApiService {
   }
 
   static Future<RateStats> getRateStats() async {
+    await initialize();
     try {
       final response = await http.get(
         Uri.parse('$_baseUrl/rate/stats'),
@@ -44,7 +50,7 @@ class ApiService {
         final data = json.decode(response.body);
         return RateStats.fromJson(data);
       } else {
-        throw Exception('Failed to fetch rate stats: ${response.statusCode}');
+        throw Exception('Failed to fetch rate stats: $response.statusCode');
       }
     } catch (e) {
       throw Exception('Error fetching rate stats: $e');
@@ -52,6 +58,7 @@ class ApiService {
   }
 
   static Future<Map<String, double>> getMaximumAmounts() async {
+    await initialize();
     try {
       final response = await http.get(
         Uri.parse('$_baseUrl/maximums'),
@@ -61,11 +68,11 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         return {
-          'maxBuyAmount': (data['maxBuyAmount'] ?? 120).toDouble(),
-          'maxSpendAmount': (data['maxSpendAmount'] ?? 80).toDouble(),
+          'maxBuyAmount': (data['maximums']['buyAmountZMW'] ?? 120).toDouble(),
+          'maxSpendAmount': (data['maximums']['spendAmountZMW'] ?? 80).toDouble(),
         };
       } else {
-        throw Exception('Failed to fetch maximum amounts: ${response.statusCode}');
+        throw Exception('Failed to fetch maximum amounts: $response.statusCode');
       }
     } catch (e) {
       throw Exception('Error fetching maximum amounts: $e');
@@ -73,6 +80,7 @@ class ApiService {
   }
 
   static Future<SpendStatus> getSpendStatus() async {
+    await initialize();
     try {
       final response = await http.get(
         Uri.parse('$_baseUrl/spend-status'),
@@ -83,7 +91,7 @@ class ApiService {
         final data = json.decode(response.body);
         return SpendStatus.fromJson(data);
       } else {
-        throw Exception('Failed to fetch spend status: ${response.statusCode}');
+        throw Exception('Failed to fetch spend status: $response.statusCode');
       }
     } catch (e) {
       throw Exception('Error fetching spend status: $e');
@@ -91,6 +99,7 @@ class ApiService {
   }
 
   static Future<bool> validateLightningAddress(String lightningAddress) async {
+    await initialize();
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/validate-lightning-address'),
@@ -110,6 +119,7 @@ class ApiService {
   }
 
   static Future<Transaction> createBuyTransaction(BuyTransactionRequest request) async {
+    await initialize();
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/confirm-buy-payment'),
@@ -130,6 +140,7 @@ class ApiService {
   }
 
   static Future<Transaction> createSpendTransaction(SpendTransactionRequest request) async {
+    await initialize();
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/create-spend-transaction'),
@@ -150,6 +161,7 @@ class ApiService {
   }
 
   static Future<Transaction> checkSpendPayment(String transactionId) async {
+    await initialize();
     try {
       final response = await http.get(
         Uri.parse('$_baseUrl/check-spend-payment/$transactionId'),
@@ -160,7 +172,7 @@ class ApiService {
         final data = json.decode(response.body);
         return Transaction.fromJson(data);
       } else {
-        throw Exception('Failed to check spend payment: ${response.statusCode}');
+        throw Exception('Failed to check spend payment: $response.statusCode');
       }
     } catch (e) {
       throw Exception('Error checking spend payment: $e');
@@ -172,6 +184,7 @@ class ApiService {
     required String lightningAddress,
     required double amount,
   }) async {
+    await initialize();
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/process-refund'),
@@ -196,6 +209,7 @@ class ApiService {
   }
 
   static Future<Transaction> getTransactionStatus(String shortId) async {
+    await initialize();
     try {
       final response = await http.get(
         Uri.parse('$_baseUrl/transaction-status/$shortId'),
@@ -206,7 +220,7 @@ class ApiService {
         final data = json.decode(response.body);
         return Transaction.fromJson(data);
       } else {
-        throw Exception('Failed to get transaction status: ${response.statusCode}');
+        throw Exception('Failed to get transaction status: $response.statusCode');
       }
     } catch (e) {
       throw Exception('Error getting transaction status: $e');
@@ -214,6 +228,7 @@ class ApiService {
   }
 
   static Future<bool> testConnection() async {
+    await initialize();
     try {
       final response = await http.get(
         Uri.parse('$_baseUrl/health'),
